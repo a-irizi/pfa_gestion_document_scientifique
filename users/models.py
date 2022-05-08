@@ -66,30 +66,64 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["nom", "prenom", "dateNaissance"]
     objects = UtilisateurManager()
 
-class Universite(models.Model):
-    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
-    nomAcronym = models.CharField(max_length=200)
-    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+    def __str__(self):
+        result = None
+        if self.deuxiemeNom:
+            result = f"{self.prenom} {self.deuxiemeNom} {self.nom}"
+        else:
+            result = f"{self.prenom} {self.nom}"
 
-class Faculte(models.Model):
-    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
-    nomAcronym = models.CharField(max_length=200)
-    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
-    universite = models.ForeignKey(to=Universite, on_delete=models.SET_NULL, null=True, blank=False)
+        return result
 
-class Departement(models.Model):
-    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
-    nomAcronym = models.CharField(max_length=200)
-    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
-    faculte = models.ForeignKey(to=Faculte, on_delete=models.SET_NULL, null=True, blank=False)
+class Chercheur(Utilisateur):
+    laboratoire = models.ForeignKey(to="LaboratoireProfile", null=True, blank=False, on_delete=models.SET_NULL)
 
-class Laboratoire(models.Model):
-    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
-    nomAcronym = models.CharField(max_length=200)
-    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
-    Departement = models.ForeignKey(to=Departement, on_delete=models.SET_NULL, null=True, blank=False)
+class Professeur(Chercheur):
+    def validerCompteThesard(t:"Thesard"):
+        t.is_active = True
 
-class Papier(abc.ABCMeta):
+    def validerPublicationThesard(t: "Thesard", p: "Papier"):
+        pass
+
+    def __str__(self):
+        return "Pr. " + Chercheur.__str__(self);
+
+# TODO: Add validators for anneeDebutDoctorat,
+class Thesard(Chercheur):
+    anneeDebutDoctorat = models.IntegerField(null=False, blank=False)
+    sujetThese = models.CharField(max_length=300, null=False, blank=False)
+    directeurThese = models.ForeignKey(to=Professeur, null=True, blank=False, on_delete=models.SET_NULL)
+
+class DirecteurLaboratoire(Professeur):
+    def validerCompteProfesseur(p: Professeur):
+        p.is_active = True
+
+class Etablissement(models.Model):
+    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
+    nomAcronym = models.CharField(max_length=200, blank=True, null=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+
+    def __str__(self):
+        result = None
+        if self.nomAcronym:
+            result = f"{self.nom} ({self.nomAcronym})"
+        else:
+            result = f"{self.nom}"
+        return result
+
+
+class UniversiteProfile(Etablissement):
+    pass
+class FaculteProfile(Etablissement):
+    universite = models.ForeignKey(to=UniversiteProfile, on_delete=models.SET_NULL, null=True, blank=False)
+
+class DepartementProfile(Etablissement):
+    faculte = models.ForeignKey(to=FaculteProfile, on_delete=models.SET_NULL, null=True, blank=False)
+
+class LaboratoireProfile(Etablissement):
+    Departement = models.ForeignKey(to=DepartementProfile, on_delete=models.SET_NULL, null=True, blank=False)
+
+class Papier(models.Model):
     INDEX = (
         ('SCOPUS', 'Scopus'),
         ('WEB_OF_SCIENCE', 'Web Of Science'),
@@ -97,11 +131,11 @@ class Papier(abc.ABCMeta):
         ('AUCUNE', 'Aucune'),
     )
     titre = models.CharField(max_length=200, null=False, blank=False)
-    auteurs = models.ManyToManyField(to="Chercheur", null=False, blank=False)
-    index = models.CharField(choices=INDEX, null=True, blank=True)
+    auteurs = models.ManyToManyField(to="Chercheur", blank=False)
+    index = models.CharField(max_length=50, choices=INDEX, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
 
 # TODO: Add Validators for annee, pageDebut, pageFin
 class PublicationRevueInternational(Papier):
@@ -134,4 +168,4 @@ class CommunicationInternational(Papier):
     date = models.DateField(null=False, blank=False)
     pageDebut = models.IntegerField(null=False, blank=False, validators=[])
     pageFin = models.IntegerField(null=False, blank=False, validators=[])
-    type = models.CharField(choices=COMMUNICATION_INTERNATIONAL_TYPE, null=False, blank=False)
+    type = models.CharField(max_length=200, choices=COMMUNICATION_INTERNATIONAL_TYPE, null=False, blank=False)

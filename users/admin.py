@@ -27,3 +27,13 @@ class CustomUserAdmin(ModelAdmin):
 
 # Register your models here.
 admin.site.register(models.Utilisateur, CustomUserAdmin)
+admin.site.register(models.Thesard)
+admin.site.register(models.Professeur)
+admin.site.register(models.DirecteurLaboratoire)
+admin.site.register(models.UniversiteProfile)
+admin.site.register(models.FaculteProfile)
+admin.site.register(models.DepartementProfile)
+admin.site.register(models.LaboratoireProfile)
+admin.site.register(models.CommunicationInternational)
+admin.site.register(models.ChapitreOuvrage)
+admin.site.register(models.PublicationRevueInternational)
