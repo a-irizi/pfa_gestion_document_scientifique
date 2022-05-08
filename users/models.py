@@ -88,3 +88,50 @@ class Laboratoire(models.Model):
     nomAcronym = models.CharField(max_length=200)
     id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
     Departement = models.ForeignKey(to=Departement, on_delete=models.SET_NULL, null=True, blank=False)
+
+class Papier(abc.ABCMeta):
+    INDEX = (
+        ('SCOPUS', 'Scopus'),
+        ('WEB_OF_SCIENCE', 'Web Of Science'),
+        ('AUTRE', 'Autre'),
+        ('AUCUNE', 'Aucune'),
+    )
+    titre = models.CharField(max_length=200, null=False, blank=False)
+    auteurs = models.ManyToManyField(to="Chercheur", null=False, blank=False)
+    index = models.CharField(choices=INDEX, null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+
+# TODO: Add Validators for annee, pageDebut, pageFin
+class PublicationRevueInternational(Papier):
+    journalNom = models.CharField(max_length=200, null=False, blank=False)
+    journalNumero = models.IntegerField(null=False, blank=False)
+    journalVolume = models.IntegerField(null=False, blank=False)
+    annee = models.IntegerField(null=False, blank=False, validators=[])
+    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
+    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+
+# TODO: Add Validators for chapitreNumero, pageDebut, pageFin
+class ChapitreOuvrage(Papier):
+    ouvrageNom = models.CharField(max_length=300, null=False, blank=False)
+    ouvrageEdition = models.IntegerField(null=False, blank=False)
+    chapitreNom = models.CharField(max_length=300, null=False, blank=False)
+    chapitreNumero = models.IntegerField(null=False, blank=False)
+    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
+    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+
+# TODO: Add Validators for date, pageDebut, pageFin
+class CommunicationInternational(Papier):
+    COMMUNICATION_INTERNATIONAL_TYPE = (
+        ('WORKSHOP', 'Workshop'),
+        ('CONFERENCE', 'Conference'),
+        ('AUTRE', 'Autre')
+    )
+    nomConference = models.CharField(max_length=300, null=False, blank=False)
+    ville = models.CharField(max_length=300, null=False, blank=False)
+    pays = models.CharField(max_length=300, null=False, blank=False)
+    date = models.DateField(null=False, blank=False)
+    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
+    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+    type = models.CharField(choices=COMMUNICATION_INTERNATIONAL_TYPE, null=False, blank=False)
