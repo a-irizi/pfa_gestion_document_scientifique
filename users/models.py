@@ -1,3 +1,4 @@
+import abc
 import uuid
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
@@ -64,3 +65,26 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     # as USERNAME_FIELD
     REQUIRED_FIELDS = ["nom", "prenom", "dateNaissance"]
     objects = UtilisateurManager()
+
+class Universite(models.Model):
+    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
+    nomAcronym = models.CharField(max_length=200)
+    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+
+class Faculte(models.Model):
+    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
+    nomAcronym = models.CharField(max_length=200)
+    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+    universite = models.ForeignKey(to=Universite, on_delete=models.SET_NULL, null=True, blank=False)
+
+class Departement(models.Model):
+    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
+    nomAcronym = models.CharField(max_length=200)
+    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+    faculte = models.ForeignKey(to=Faculte, on_delete=models.SET_NULL, null=True, blank=False)
+
+class Laboratoire(models.Model):
+    nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
+    nomAcronym = models.CharField(max_length=200)
+    id = models.UUIDField(uuid.uuid4, editable=False, unique=True, primary_key=True)
+    Departement = models.ForeignKey(to=Departement, on_delete=models.SET_NULL, null=True, blank=False)
