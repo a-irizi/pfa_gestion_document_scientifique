@@ -1,4 +1,5 @@
 import uuid
+from wsgiref.validate import validator
 from django.utils import timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -61,7 +62,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     nom = models.CharField(max_length=50, null=False, blank=False)
     deuxiemeNom = models.CharField(max_length=50, null=True, blank=True)
     prenom = models.CharField(max_length=50, null=False, blank=False)
-    dateNaissance = models.DateField(null=False, blank=False)
+    dateNaissance = models.DateField(null=False, blank=False, validators=[validators.minAgeValidator])
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, unique=True, null=False, primary_key=True
     )
