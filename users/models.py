@@ -1,30 +1,48 @@
-import abc
 import uuid
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
-from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
+
+from . import validators
 
 # Create your models here.
 class UtilisateurManager(BaseUserManager):
     use_in_migrations = True
-    def _create_user(self, nom, prenom,email, dateNaissance, password=None, **extra_fields):
+
+    def _create_user(
+        self, nom, prenom, email, dateNaissance, password=None, **extra_fields
+    ):
         if not email:
             raise ValueError("The given email must be set")
         email = BaseUserManager.normalize_email(email)
-        user = self.model(email=email, nom=nom, prenom=prenom, dateNaissance=dateNaissance, **extra_fields)
+        user = self.model(
+            email=email,
+            nom=nom,
+            prenom=prenom,
+            dateNaissance=dateNaissance,
+            **extra_fields,
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self,nom, prenom,email, dateNaissance, password=None, **extra_fields):
+    def create_user(
+        self, nom, prenom, email, dateNaissance, password=None, **extra_fields
+    ):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
-        return self._create_user(nom, prenom,email, dateNaissance, password, **extra_fields)
+        return self._create_user(
+            nom, prenom, email, dateNaissance, password, **extra_fields
+        )
 
-    def create_superuser(self,nom, prenom,email, dateNaissance, password=None, **extra_fields):
+    def create_superuser(
+        self, nom, prenom, email, dateNaissance, password=None, **extra_fields
+    ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -33,7 +51,10 @@ class UtilisateurManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self._create_user(nom, prenom,email, dateNaissance, password, **extra_fields)
+        return self._create_user(
+            nom, prenom, email, dateNaissance, password, **extra_fields
+        )
+
 
 class Utilisateur(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=200, unique=True, null=False, blank=False)
@@ -41,7 +62,9 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     deuxiemeNom = models.CharField(max_length=50, null=True, blank=True)
     prenom = models.CharField(max_length=50, null=False, blank=False)
     dateNaissance = models.DateField(null=False, blank=False)
-    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, null=False, primary_key=True)
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, null=False, primary_key=True
+    )
 
     is_staff = models.BooleanField(
         _("staff status"),
@@ -57,7 +80,6 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         ),
     )
     date_joined = models.DateTimeField(default=timezone.now)
-
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
@@ -75,33 +97,50 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
         return result
 
+
 class Chercheur(Utilisateur):
-    laboratoire = models.ForeignKey(to="LaboratoireProfile", null=True, blank=False, on_delete=models.SET_NULL)
+    laboratoire = models.ForeignKey(
+        to="LaboratoireProfile", null=True, blank=False, on_delete=models.SET_NULL
+    )
+
 
 class Professeur(Chercheur):
-    def validerCompteThesard(t:"Thesard"):
+    def validerCompteThesard(t: "Thesard"):
         t.is_active = True
 
     def validerPublicationThesard(t: "Thesard", p: "Papier"):
         pass
 
     def __str__(self):
-        return "Pr. " + Chercheur.__str__(self);
+        return "Pr. " + Chercheur.__str__(self)
 
-# TODO: Add validators for anneeDebutDoctorat,
+
 class Thesard(Chercheur):
-    anneeDebutDoctorat = models.IntegerField(null=False, blank=False)
+    anneeDebutDoctorat = models.IntegerField(
+        null=False,
+        blank=False,
+        validators=[
+            validators.minAnneeDebutDoctoratValidator,
+            validators.maxAnneeDebutDoctoratValidator,
+        ],
+    )
     sujetThese = models.CharField(max_length=300, null=False, blank=False)
-    directeurThese = models.ForeignKey(to=Professeur, null=True, blank=False, on_delete=models.SET_NULL)
+    directeurThese = models.ForeignKey(
+        to=Professeur, null=True, blank=False, on_delete=models.SET_NULL
+    )
+
 
 class DirecteurLaboratoire(Professeur):
     def validerCompteProfesseur(p: Professeur):
         p.is_active = True
 
+
 class Etablissement(models.Model):
     nom = models.CharField(max_length=200, unique=True, null=False, blank=False)
     nomAcronym = models.CharField(max_length=200, blank=True, null=True)
-    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, primary_key=True
+    )
 
     def __str__(self):
         result = None
@@ -114,28 +153,42 @@ class Etablissement(models.Model):
 
 class UniversiteProfile(Etablissement):
     pass
+
+
 class FaculteProfile(Etablissement):
-    universite = models.ForeignKey(to=UniversiteProfile, on_delete=models.SET_NULL, null=True, blank=False)
+    universite = models.ForeignKey(
+        to=UniversiteProfile, on_delete=models.SET_NULL, null=True, blank=False
+    )
+
 
 class DepartementProfile(Etablissement):
-    faculte = models.ForeignKey(to=FaculteProfile, on_delete=models.SET_NULL, null=True, blank=False)
+    faculte = models.ForeignKey(
+        to=FaculteProfile, on_delete=models.SET_NULL, null=True, blank=False
+    )
+
 
 class LaboratoireProfile(Etablissement):
-    Departement = models.ForeignKey(to=DepartementProfile, on_delete=models.SET_NULL, null=True, blank=False)
+    Departement = models.ForeignKey(
+        to=DepartementProfile, on_delete=models.SET_NULL, null=True, blank=False
+    )
+
 
 class Papier(models.Model):
     INDEX = (
-        ('SCOPUS', 'Scopus'),
-        ('WEB_OF_SCIENCE', 'Web Of Science'),
-        ('AUTRE', 'Autre'),
-        ('AUCUNE', 'Aucune'),
+        ("SCOPUS", "Scopus"),
+        ("WEB_OF_SCIENCE", "Web Of Science"),
+        ("AUTRE", "Autre"),
+        ("AUCUNE", "Aucune"),
     )
     titre = models.CharField(max_length=200, null=False, blank=False)
     auteurs = models.ManyToManyField(to="Chercheur", blank=False)
     index = models.CharField(max_length=50, choices=INDEX, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, primary_key=True
+    )
+
 
 # TODO: Add Validators for annee, pageDebut, pageFin
 class PublicationRevueInternational(Papier):
@@ -146,6 +199,7 @@ class PublicationRevueInternational(Papier):
     pageDebut = models.IntegerField(null=False, blank=False, validators=[])
     pageFin = models.IntegerField(null=False, blank=False, validators=[])
 
+
 # TODO: Add Validators for chapitreNumero, pageDebut, pageFin
 class ChapitreOuvrage(Papier):
     ouvrageNom = models.CharField(max_length=300, null=False, blank=False)
@@ -155,12 +209,13 @@ class ChapitreOuvrage(Papier):
     pageDebut = models.IntegerField(null=False, blank=False, validators=[])
     pageFin = models.IntegerField(null=False, blank=False, validators=[])
 
+
 # TODO: Add Validators for date, pageDebut, pageFin
 class CommunicationInternational(Papier):
     COMMUNICATION_INTERNATIONAL_TYPE = (
-        ('WORKSHOP', 'Workshop'),
-        ('CONFERENCE', 'Conference'),
-        ('AUTRE', 'Autre')
+        ("WORKSHOP", "Workshop"),
+        ("CONFERENCE", "Conference"),
+        ("AUTRE", "Autre"),
     )
     nomConference = models.CharField(max_length=300, null=False, blank=False)
     ville = models.CharField(max_length=300, null=False, blank=False)
@@ -168,4 +223,9 @@ class CommunicationInternational(Papier):
     date = models.DateField(null=False, blank=False)
     pageDebut = models.IntegerField(null=False, blank=False, validators=[])
     pageFin = models.IntegerField(null=False, blank=False, validators=[])
-    type = models.CharField(max_length=200, choices=COMMUNICATION_INTERNATIONAL_TYPE, null=False, blank=False)
+    type = models.CharField(
+        max_length=200,
+        choices=COMMUNICATION_INTERNATIONAL_TYPE,
+        null=False,
+        blank=False,
+    )
