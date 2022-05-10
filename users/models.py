@@ -62,7 +62,9 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     nom = models.CharField(max_length=50, null=False, blank=False)
     deuxiemeNom = models.CharField(max_length=50, null=True, blank=True)
     prenom = models.CharField(max_length=50, null=False, blank=False)
-    dateNaissance = models.DateField(null=False, blank=False, validators=[validators.minAgeValidator])
+    dateNaissance = models.DateField(
+        null=False, blank=False, validators=[validators.minAgeValidator]
+    )
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, unique=True, null=False, primary_key=True
     )
@@ -196,9 +198,15 @@ class PublicationRevueInternational(Papier):
     journalNom = models.CharField(max_length=200, null=False, blank=False)
     journalNumero = models.IntegerField(null=False, blank=False)
     journalVolume = models.IntegerField(null=False, blank=False)
-    annee = models.IntegerField(null=False, blank=False, validators=[])
-    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
-    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+    annee = models.IntegerField(
+        null=False, blank=False, validators=[validators.maxAnneeValidator]
+    )
+    pageDebut = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
+    pageFin = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
 
 
 # TODO: Add Validators for chapitreNumero, pageDebut, pageFin
@@ -207,8 +215,12 @@ class ChapitreOuvrage(Papier):
     ouvrageEdition = models.IntegerField(null=False, blank=False)
     chapitreNom = models.CharField(max_length=300, null=False, blank=False)
     chapitreNumero = models.IntegerField(null=False, blank=False)
-    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
-    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+    pageDebut = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
+    pageFin = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
 
 
 # TODO: Add Validators for date, pageDebut, pageFin
@@ -222,8 +234,12 @@ class CommunicationInternational(Papier):
     ville = models.CharField(max_length=300, null=False, blank=False)
     pays = models.CharField(max_length=300, null=False, blank=False)
     date = models.DateField(null=False, blank=False)
-    pageDebut = models.IntegerField(null=False, blank=False, validators=[])
-    pageFin = models.IntegerField(null=False, blank=False, validators=[])
+    pageDebut = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
+    pageFin = models.IntegerField(
+        null=False, blank=False, validators=[validators.pageNumberValidator]
+    )
     type = models.CharField(
         max_length=200,
         choices=COMMUNICATION_INTERNATIONAL_TYPE,

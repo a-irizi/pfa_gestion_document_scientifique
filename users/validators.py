@@ -8,6 +8,7 @@ def minAnneeDebutDoctoratValidator(value):
     if value < (currentYear() - 6 + 1):
         raise forms.ValidationError("Année de début du doctorat est inférieure à la valeur minimale")
 
+
 def maxAnneeDebutDoctoratValidator(value):
     if value > currentYear():
         raise forms.ValidationError("Année de début du doctorat est supérieure à la valeur maximale")
@@ -21,3 +22,11 @@ def minAgeValidator(value):
     MIN_AGE = 23
     if age(value) < MIN_AGE:
         raise forms.ValidationError("Age est inférieur à la valeur minimale")
+
+def pageNumberValidator(value):
+    if value < 1:
+        raise forms.ValidationError("Numéro de page est inférieur à la valeur minimale")
+
+def maxAnneeValidator(value):
+    if value > currentYear():
+        raise forms.ValidationError("Année de communication est supérieure à la valeur maximale")
